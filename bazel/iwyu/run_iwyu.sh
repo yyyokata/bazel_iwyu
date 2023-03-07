@@ -20,8 +20,6 @@ f=
 set -e
 # --- end runfiles.bash initialization v2 ---
 
-set -euo pipefail
-
 readonly RED='\033[0;31m'
 readonly RESET='\033[0m'
 
@@ -36,9 +34,14 @@ shift
 
 touch "${OUTPUT}"
 truncate -s 0 "${OUTPUT}"
+set +e
+set -uo pipefail
 
-if ! "${IWYU_BINARY}" "$@" 2> "${OUTPUT}"; then
-  error "IWYU violation found. Fixes have been written to ${OUTPUT}"
-  cat "${OUTPUT}"
-  exit 1
+"${IWYU_BINARY}" "$@" 2> "${OUTPUT}"
+let ret=${?}-2
+# IWYU use 2 as success return.
+if [[ ${ret} -ne 0 ]]; then
+  error "IWYU violations found as ${ret}. Fixes have been written to ${OUTPUT}";
+  cat "${OUTPUT}";
+  exit 1;
 fi
